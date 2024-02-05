@@ -1,0 +1,55 @@
+-- Creating the fbi crime table --
+CREATE TABLE fbi_crime_data_2015 (
+st varchar(20),
+city varchar(50),
+population integer,
+violent_crime integer,
+property_crime integer,
+burglary integer,
+larceny_theft integer,
+motor_vehicle_theft integer,
+CONSTRAINT st_city_key PRIMARY KEY (st, city)
+);
+-- Importing the dataset --
+COPY fbi_crime_data_2015
+FROM 'C:\YourDirectory\fbi_crime_data_2015.csv'
+WITH (FORMAT CSV, HEADER, DELIMITER ',');
+
+-- Selecting for all records from the state of Maine --
+SELECT *
+FROM fbi_crime_data_2015
+WHERE st = 'Maine'
+
+-- Creating a CTE to house the large towns and cities in Maine and their associated values --
+WITH
+	Maine_cities
+AS
+	(
+		SELECT *
+		FROM fbi_crime_data_2015
+		WHERE population >= 15000 AND st = 'Maine'
+	)
+SELECT *
+from Maine_cities
+ORDER BY population DESC;
+
+-- Creating a script to rank all towns in Maine by the level of violent crime present --
+SELECT city, st, violent_crime,
+DENSE_RANK() OVER (ORDER BY violent_crime DESC)
+FROM fbi_crime_data_2015
+WHERE st = 'Maine'
+
+-- Running analysis to find a correlation between population size and the multiple types of crime --
+SELECT 
+	round(corr(population, violent_crime)::numeric,2)
+	AS violent_pop,
+	round(corr(population, property_crime)::numeric,2)
+	AS property_pop,
+	round(corr(population, burglary)::numeric,2)
+	AS burglary_pop,
+	round(corr(population, larceny_theft)::numeric,2)
+	AS larceny_pop,
+	round(corr(population, motor_vehicle_theft)::numeric,2)
+	AS motor_theft_pop
+FROM fbi_crime_data_2015
+
